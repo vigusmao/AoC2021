@@ -79,9 +79,11 @@ def wind():
         for line in horizontal_lines:
             add_all_line_points(line, count_by_point, intersections)
 
-        # # part two only:
+        # ----------------------------------------------------
+        # Uncomment the two lines below to run PART TWO
         # for line in oblique_lines:
         #     add_points(line, count_by_point, intersections)
+        # ----------------------------------------------------
 
         return len(intersections)
 
