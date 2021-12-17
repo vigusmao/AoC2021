@@ -1,4 +1,21 @@
-def hex_digit_to_four_bits(x):
+EXPRESSION_BY_OPERATOR = {
+    '000': ('(', ' + ', ')'),
+    '001': ('(', ' * ', ')'),
+    '010': ('min([', ', ', '])'),
+    '011': ('max([', ', ', '])'),
+    '100': ('', '', ''),
+    '101': ('(', ' > ', ')'),
+    '110': ('(', ' < ', ')'),
+    '111': ('(', ' == ', ')')
+}
+
+
+def obtain_expression(operator, operands):
+    prefix, joiner, suffix = EXPRESSION_BY_OPERATOR.get(operator)
+    return prefix + joiner.join(operands) + suffix
+
+
+def hexa_symbol_to_four_bits(x):
     binary = bin(int('0x' + x, 16))[2:]
     return '0' * (4 - len(binary)) + binary
 
@@ -10,7 +27,7 @@ def binary_to_decimal(x):
 def compute(binary):
     pos = 0
     value = 0
-    expression = None
+    operands = []
 
     # skips version
     pos += 3
@@ -20,19 +37,18 @@ def compute(binary):
 
     if packet_type == '100':
         # literal
+
         while True:
             value *= 16
             value += binary_to_decimal(binary[pos + 1: pos + 5])
-            expression = str(value)
             control = binary[pos]
             pos += 5
             if control == '0':
                 break
+        operands.append(str(value))
 
     else:
         # operator and subpackets
-        operands = []
-        subexpressions = []
 
         length_type = binary[pos]
         pos += 1
@@ -42,61 +58,33 @@ def compute(binary):
             pos += 15
             max_pos = pos + size_in_bits
             while pos < max_pos:
-                value, bits_read, subexpression = compute(binary[pos:])
-                operands.append(value)
-                subexpressions.append(subexpression)
+                subexpression, bits_read = compute(binary[pos:])
+                operands.append(subexpression)
                 pos += bits_read
 
         else:
             number_of_subpackets = binary_to_decimal(binary[pos: pos + 11])
             pos += 11
             for i in range(number_of_subpackets):
-                value, bits_read, subexpression = compute(binary[pos:])
-                operands.append(value)
-                subexpressions.append(subexpression)
+                subexpression, bits_read = compute(binary[pos:])
+                operands.append(subexpression)
                 pos += bits_read
 
-        if packet_type == '000':
-            value = sum(operands)
-            expression = '(' + '+'.join(subexpressions) + ')'
-        elif packet_type == '001':
-            if len(operands) > 0:
-                value = 1
-                for operand in operands:
-                    value *= operand
-                expression = '(' + '*'.join(subexpressions) + ')'
-        elif packet_type == '010':
-            value = min(operands)
-            expression = 'min(' + ','.join(subexpressions) + ')'
-        elif packet_type == '011':
-            value = max(operands)
-            expression = 'max(' + ','.join(subexpressions) + ')'
-        elif packet_type == '101':
-            value = 1 if operands[0] > operands[1] else 0
-            expression = 'is_greater(' + ','.join(subexpressions) + ')'
-        elif packet_type == '110':
-            value = 1 if operands[0] < operands[1] else 0
-            expression = 'is_less(' + ','.join(subexpressions) + ')'
-        elif packet_type == '111':
-            value = 1 if operands[0] == operands[1] else 0
-            expression = 'are_equal(' + ','.join(subexpressions) + ')'
-
-    return value, pos, expression
+    return obtain_expression(packet_type, operands), pos
 
 
-def process(line):
-    binary_list = []
-    for hex in line:
-        if hex == '\n':
+def process(hexa):
+    binary_as_list = []
+    for h in hexa:
+        if h == '\n':
             continue
-        binary_list.append(hex_digit_to_four_bits(hex))
-    binary = ''.join(binary_list)
+        binary_as_list.append(hexa_symbol_to_four_bits(h))
+    binary = ''.join(binary_as_list)
 
     return compute(binary)
 
 
 with open("/Users/viniciusgusmao/Documents/AoC2021/16.txt") as file:
     line = file.read()
-    print len(line) * 4
-    value, bits_read, expression = process(line)
-    print "%s = %d (%d bits read)" % (expression, value, bits_read)
+    expression, size = process(line)
+    print "%s = %d (%d bits read)" % (expression, eval(expression), size)
