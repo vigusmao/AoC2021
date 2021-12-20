@@ -98,7 +98,7 @@ def process(lines):
             common_quadrilaterals = set(coordinates_by_quadrilateral_by_scanner[r].keys()) & \
                                     set(coordinates_by_quadrilateral_by_scanner[s].keys())
 
-            if len(common_quadrilaterals) >= 220:
+            if len(common_quadrilaterals) >= 495:
                 common_beacons = {r: set(), s: set()}
                 for t in common_quadrilaterals:
                     common_beacons[r] |= {c for c in coordinates_by_quadrilateral_by_scanner[r].get(t)}
