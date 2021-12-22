@@ -1,7 +1,10 @@
+TARGET = 21
+
+# readability consts
 POS = 0
 SCORE = 1
-
-TARGET = 21
+PLAYER_1 = 0
+PLAYER_2 = 1
 
 memo = {}
 
@@ -23,7 +26,7 @@ def solve(pos_and_score_1, pos_and_score_2, step):
     if result_from_memo is not None:
         return result_from_memo
 
-    wins1, wins2 = 0, 0
+    wins = [0, 0]
 
     for die_result in [1, 2, 3]:
         new_pos_and_score_1, new_pos_and_score_2 = pos_and_score_1, pos_and_score_2
@@ -32,15 +35,13 @@ def solve(pos_and_score_1, pos_and_score_2, step):
         else:         # next die goes to Player 2
             new_pos_and_score_2 = update(pos_and_score_2, die_result, step == 6)
 
-        wins = solve(new_pos_and_score_1, new_pos_and_score_2, 1 + (step % 6))
-        wins1 += wins[0]
-        wins2 += wins[1]
+        new_wins = solve(new_pos_and_score_1, new_pos_and_score_2, 1 + (step % 6))
+        wins[PLAYER_1] += new_wins[PLAYER_1]
+        wins[PLAYER_2] += new_wins[PLAYER_2]
 
-    result = wins1, wins2
+    memo[pos_and_score_1, pos_and_score_2, step] = wins
 
-    memo[pos_and_score_1, pos_and_score_2, step] = result
-
-    return result
+    return wins
 
 
 print max(solve((1, 0), (5, 0), 1))
